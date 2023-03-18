@@ -1,13 +1,9 @@
 import os
+import time
 import openai
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-
-# Replace 'your_api_key' with your actual API key
-openai.api_key = os.environ.get("OPENAI_API_KEY")
-
-TARGET_LANGUAGE = "zh-Hant"
 
 def download_alpaca_data():
     import requests
@@ -33,48 +29,82 @@ def translate_text(value, target_language):
         )
     return response.choices[0]["message"]["content"].strip()
 
-def translate_item(item):
+def translate_item(item, target_language):
     translated_item = {}
     for key, value in item.items():
         if value:
-            translated_value = translate_text(value, target_language=TARGET_LANGUAGE)
+            translated_value = translate_text(value, target_language=target_language)
             translated_item[key] = translated_value
         else:
             translated_item[key] = ''
     return translated_item
 
-# Maximum number of parallel requests
-MAX_PARALLEL_REQUESTS = 100
+def load_data():
+    # Check if the ALPACA dataset is downloaded
+    if not os.path.exists("alpaca_data.json"):
+        print("Downloading ALPACA dataset...")
+        download_alpaca_data()
 
-# Check if the ALPACA dataset is downloaded
-if not os.path.exists("alpaca_data.json"):
-    print("Downloading ALPACA dataset...")
-    download_alpaca_data()
+    # Assuming the input JSON is in a file named 'input.json'
+    with open('alpaca_data.json', 'r') as f:
+        data = json.load(f) 
+    return data       
 
-# Assuming the input JSON is in a file named 'input.json'
-with open('alpaca_data.json', 'r') as f:
-    data = json.load(f)
+def chunk_data(data, chunk_size=1000):
+    """Chunk the data into smaller chunks to avoid hitting the API rate limit.
 
-start = 40000
-end = 55000
-translated_data = []
-
-if start is None:
+    yields:
+        start: The starting index of the chunk
+        end: The ending index of the chunk
+    """
     start = 0
-if end is None:
-    end = len(data)
-if end > len(data):
-    end = len(data)
-data = data[start:end]
-
-with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
-    futures = {executor.submit(translate_item, item): item for item in data}
+    end = chunk_size
+    while start < len(data):
+        if end > len(data):
+            end = len(data)
+        yield start, end
+        start = end
+        end += chunk_size
     
-    for future in tqdm(as_completed(futures), total=len(futures), desc="Translating"):
-        translated_data.append(future.result())
+def process_data(start, end, data, target_language):
+    """Translate the data from start to end."""
+    translated_data = []
 
-# Save the translated data to a new JSON file named 'translated_data.json'
-with open(f'translated_data_up_to_{start}_to_{end}.json', 'w') as f:
-    json.dump(translated_data, f, ensure_ascii=False, indent=4)
+    if start is None:
+        start = 0
+    if end is None:
+        end = len(data)
+    if end > len(data):
+        end = len(data)
+    data = data[start:end]
 
-print(f"Translation complete. The translated data is saved in 'translated_data_from_{start}_to_{end}.json'")
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
+        futures = {executor.submit(translate_item, item, target_language): item for item in data}
+
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Translating"):
+            translated_data.append(future.result())
+
+    # Save the translated data to a new JSON file named 'translated_data.json'
+    with open(f'translated_data_up_to_{start}_to_{end}.json', 'w') as f:
+        json.dump(translated_data, f, ensure_ascii=False, indent=4)
+
+    print(f"Translation complete. The translated data is saved in 'translated_data_from_{start}_to_{end}.json'")
+
+if __name__ == "__main__":
+    """
+    1. Load the ALPACA dataset
+    2. Chunk the dataset into smaller chunks to avoid hitting the API rate limit
+    3. Translate each chunk
+    """
+    # Replace 'your_api_key' with your actual API key
+    openai.api_key = os.environ.get("OPENAI_API_KEY")
+    TARGET_LANGUAGE = "zh-Hant"        
+    # Maximum number of parallel requests
+    MAX_PARALLEL_REQUESTS = 100
+    CHUNK_SIZE = 100
+    data = load_data()
+    for start, end in chunk_data(data):
+        process_data(start, end, data, target_language=TARGET_LANGUAGE)
+        # Sleep for 10 second to avoid hitting the API rate limit
+        time.sleep(10)
+
