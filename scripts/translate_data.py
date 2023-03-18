@@ -59,11 +59,11 @@ start = 40000
 end = 55000
 translated_data = []
 
-if end > len(data):
-    end = len(data)
 if start is None:
     start = 0
 if end is None:
+    end = len(data)
+if end > len(data):
     end = len(data)
 data = data[start:end]
 
