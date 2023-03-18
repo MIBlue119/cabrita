@@ -58,6 +58,13 @@ with open('alpaca_data.json', 'r') as f:
 start = 40000
 end = 55000
 translated_data = []
+
+if end > len(data):
+    end = len(data)
+if start is None:
+    start = 0
+if end is None:
+    end = len(data)
 data = data[start:end]
 
 with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
