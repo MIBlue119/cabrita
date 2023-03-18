@@ -121,7 +121,5 @@ if __name__ == "__main__":
     restart_index = 280
     for start, end in chunk_data(restart_index, data, chunk_size=CHUNK_SIZE):
         process_data(start, end, data, target_language=TARGET_LANGUAGE, max_parallel_requests=MAX_PARALLEL_REQUESTS)
-        # Sleep for 10 second to avoid hitting the API rate limit
-        time.sleep(10)
     # Combine all the translated data into one JSON file
     combine_data()
