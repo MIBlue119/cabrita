@@ -82,7 +82,7 @@ def process_data(start, end, data, target_language, max_parallel_requests=100):
         end = len(data)
     data = data[start:end]
 
-    with ThreadPoolExecutor(max_workers=MAX_PARALLEL_REQUESTS) as executor:
+    with ThreadPoolExecutor(max_workers=max_parallel_requests) as executor:
         futures = {executor.submit(translate_item, item, target_language): item for item in data}
 
         for future in tqdm(as_completed(futures), total=len(futures), desc="Translating"):
@@ -115,10 +115,10 @@ if __name__ == "__main__":
     openai.api_key = os.environ.get("OPENAI_API_KEY")
     TARGET_LANGUAGE = "zh-Hant"        
     # Maximum number of parallel requests
-    MAX_PARALLEL_REQUESTS = 100
-    CHUNK_SIZE = 100
+    MAX_PARALLEL_REQUESTS = 3
+    CHUNK_SIZE = 20
     data = load_data()
-    restart_index = 0
+    restart_index = 280
     for start, end in chunk_data(restart_index, data, chunk_size=CHUNK_SIZE):
         process_data(start, end, data, target_language=TARGET_LANGUAGE, max_parallel_requests=MAX_PARALLEL_REQUESTS)
         # Sleep for 10 second to avoid hitting the API rate limit
