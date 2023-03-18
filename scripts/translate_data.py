@@ -103,7 +103,7 @@ if __name__ == "__main__":
     MAX_PARALLEL_REQUESTS = 100
     CHUNK_SIZE = 100
     data = load_data()
-    for start, end in chunk_data(data):
+    for start, end in chunk_data(data, chunk_size=CHUNK_SIZE):
         process_data(start, end, data, target_language=TARGET_LANGUAGE)
         # Sleep for 10 second to avoid hitting the API rate limit
         time.sleep(10)
