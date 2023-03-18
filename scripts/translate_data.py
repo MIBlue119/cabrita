@@ -54,14 +54,14 @@ def load_data():
         data = json.load(f) 
     return data       
 
-def chunk_data(data, chunk_size=1000):
+def chunk_data(restart_index, data, chunk_size=1000):
     """Chunk the data into smaller chunks to avoid hitting the API rate limit.
 
     yields:
         start: The starting index of the chunk
         end: The ending index of the chunk
     """
-    start = 0
+    start = restart_index
     end = chunk_size
     while start < len(data):
         if end > len(data):
@@ -118,7 +118,8 @@ if __name__ == "__main__":
     MAX_PARALLEL_REQUESTS = 100
     CHUNK_SIZE = 100
     data = load_data()
-    for start, end in chunk_data(data, chunk_size=CHUNK_SIZE):
+    restart_index = 0
+    for start, end in chunk_data(restart_index, data, chunk_size=CHUNK_SIZE):
         process_data(start, end, data, target_language=TARGET_LANGUAGE, max_parallel_requests=MAX_PARALLEL_REQUESTS)
         # Sleep for 10 second to avoid hitting the API rate limit
         time.sleep(10)
