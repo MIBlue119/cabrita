@@ -66,7 +66,7 @@ def chunk_data(data, chunk_size=1000):
         start = end
         end += chunk_size
     
-def process_data(start, end, data, target_language):
+def process_data(start, end, data, target_language, max_parallel_requests=100):
     """Translate the data from start to end."""
     translated_data = []
 
@@ -90,6 +90,17 @@ def process_data(start, end, data, target_language):
 
     print(f"Translation complete. The translated data is saved in 'translated_data_from_{start}_to_{end}.json'")
 
+def combine_data():
+    """Combine all the translated data into one JSON file."""
+    data = []
+    for file in os.listdir():
+        if file.startswith("translated_data_up_to_"):
+            with open(file, 'r') as f:
+                data.extend(json.load(f))
+    with open('translated_data.json', 'w') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+    print("All translated data combined into 'translated_data.json'")
+
 if __name__ == "__main__":
     """
     1. Load the ALPACA dataset
@@ -104,7 +115,8 @@ if __name__ == "__main__":
     CHUNK_SIZE = 100
     data = load_data()
     for start, end in chunk_data(data, chunk_size=CHUNK_SIZE):
-        process_data(start, end, data, target_language=TARGET_LANGUAGE)
+        process_data(start, end, data, target_language=TARGET_LANGUAGE, max_parallel_requests=MAX_PARALLEL_REQUESTS)
         # Sleep for 10 second to avoid hitting the API rate limit
         time.sleep(10)
-
+    # Combine all the translated data into one JSON file
+    combine_data()
