@@ -4,6 +4,8 @@ import openai
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
+from ratelimiter import RateLimiter
+from retrying import retry
 
 def download_alpaca_data():
     import requests
@@ -17,6 +19,8 @@ def download_alpaca_data():
     else:
             print("Failed to download file.")
 
+@retry(stop_max_attempt_number=10)
+@RateLimiter(max_calls=20, period=60)
 def translate_text(value, target_language):
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
