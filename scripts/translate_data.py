@@ -20,7 +20,7 @@ def download_alpaca_data():
             print("Failed to download file.")
 
 @retry(stop_max_attempt_number=10)
-@RateLimiter(max_calls=50, period=60)
+@RateLimiter(max_calls=58, period=60)
 def translate_text(value, target_language):
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -62,7 +62,7 @@ def chunk_data(restart_index, data, chunk_size=1000):
         end: The ending index of the chunk
     """
     start = restart_index
-    end = chunk_size
+    end = restart_index + chunk_size
     while start < len(data):
         if end > len(data):
             end = len(data)
